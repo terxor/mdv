@@ -473,7 +473,7 @@ body {
   max-width: 100%;
 }
 .tree .tree-entry:hover {
-  background: #e3f2fd;
+  background: #F1F9FE;
   color: #1976d2;
 }
 .tree .tree-entry.active {
@@ -529,7 +529,7 @@ body {
   background: none;
 }
 #search-results .search-body ul li:hover {
-  background: #e3f2fd;
+  background: #F1F9FE;
   color: #1976d2;
 }
 #search-results .search-body ul li.active {
