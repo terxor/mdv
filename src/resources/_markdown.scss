@@ -187,8 +187,8 @@ $blockquote-text-color: #6F7070;
   // Horizontal rule
   hr {
     border: none;
-    border-top: 1px solid $markdown-hr;
-    opacity: 0.5;
+    border-top: solid 3px rgba(189, 193, 198, 0.2);
+    margin: 2em 0;
   }
 
   // Blockquote

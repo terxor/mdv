@@ -176,8 +176,8 @@
 }
 #markdown-body hr {
   border: none;
-  border-top: 1px solid #ccc;
-  opacity: 0.5;
+  border-top: solid 3px rgba(189, 193, 198, 0.2);
+  margin: 2em 0;
 }
 #markdown-body blockquote {
   display: block;
