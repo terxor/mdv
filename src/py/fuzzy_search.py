@@ -44,7 +44,7 @@ class FuzzySearch:
             path = node.id
             content = node.raw
 
-            lines = content.splitlines()
+            lines = (content or "").splitlines()
             n = len(lines)
             i = 0
             while i <= n - block_size:

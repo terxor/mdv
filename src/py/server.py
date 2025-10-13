@@ -15,7 +15,7 @@ class MdViewerServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, config: dict):
         super().__init__(server_address, RequestHandlerClass)
         self.config = config
-        self.state = MdViewerState(config['dir'])
+        self.state = MdViewerState(config)
 
 class MdViewerHandler(SimpleHTTPRequestHandler):
     """Request handler for Markdown Viewer."""
@@ -117,10 +117,13 @@ def main():
     parser.add_argument("--dir", required=True, help="Directory to serve")
     parser.add_argument("--port", default="5000", help="Port to serve on")
     parser.add_argument("--host", default="localhost", help="Host to bind to")
+    parser.add_argument("--precache", action="store_true", help="Pre-cache the contents of the directory")
     args = parser.parse_args()
 
-    config = {"dir": args.dir}
-    logger.info(f"Config: {config}")
+    config = {}
+    config["dir"] = args.dir
+    config["precache"] = args.precache
+    logger.debug(f"Config: {config}")
 
     server = MdViewerServer((args.host, int(args.port)), MdViewerHandler, config)
     logger.info(f"Serving on http://{args.host}:{args.port}/")
