@@ -114,10 +114,10 @@ class MdViewerHandler(SimpleHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description="Markdown viewer")
-    parser.add_argument("--dir", required=True, help="Directory to serve")
-    parser.add_argument("--port", default="5000", help="Port to serve on")
-    parser.add_argument("--host", default="localhost", help="Host to bind to")
-    parser.add_argument("--precache", action="store_true", help="Pre-cache the contents of the directory")
+    parser.add_argument("--dir", "-d", required=True, help="Directory to serve")
+    parser.add_argument("--port", "-p", default="5000", help="Port to serve on")
+    parser.add_argument("--host", "-H", default="localhost", help="Host to bind to")
+    parser.add_argument("--precache", "-c", action="store_true", help="Pre-cache the contents of the directory")
     args = parser.parse_args()
 
     config = {}

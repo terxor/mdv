@@ -6,7 +6,7 @@
 new_args=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dir)
+    --dir|-d)
       if [[ -n "$2" ]]; then
         abs_dir=$(realpath "$2")
         new_args+=("--dir" "$abs_dir")
