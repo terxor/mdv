@@ -7,6 +7,13 @@ from logger import get_logger
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 from urllib.parse import unquote, urlparse, parse_qs
 from sv_state import MdViewerState
+from jinja2 import Environment, FileSystemLoader
+
+env = Environment(loader=FileSystemLoader("templates"))
+
+def render_markdown_page(html: str) -> str:
+    template = env.get_template("plain.html")
+    return template.render(content=html)
 
 logger = get_logger(__name__)
 
@@ -81,7 +88,7 @@ class MdViewerHandler(SimpleHTTPRequestHandler):
             if raw:
                 return self._send_plaintext(content)
             else:
-                return self._send_html(content)
+                return self._send_html(render_markdown_page(content))
         except Exception as e:
             logger.error(f"Error serving content '{name}': {e}")
             return self._send_error()

@@ -12,6 +12,23 @@ const state = {
   lastUpdateTs: Date.now() - 2 * constants.debounceDelay
 };
 
+function scrollIntoViewIfNeeded(el) {
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const outOfView =
+    rect.top < 0 ||
+    rect.bottom > window.innerHeight ||
+    rect.left < 0 ||
+    rect.right > window.innerWidth;
+
+  if (outOfView) {
+    el.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest'
+    });
+  }
+}
+
 
 // Helper to highlight the TOC entry for the current scroll position
 export function highlightCurrentHeading() {
@@ -32,6 +49,7 @@ export function highlightCurrentHeading() {
   // const bottomPos = container.scrollBottom;
   
   let last = -1, firstDist = -1;
+  let firstActive = -1, lastActive = -1;
 
   for (let i = 0; i < state.headings.length; i++) {
     const rect = state.headings[i].getBoundingClientRect();
@@ -44,6 +62,8 @@ export function highlightCurrentHeading() {
         firstDist = rect.top;
       }
       state.headingEntries[i].classList.add(treeClasses.active);
+      if (firstActive == -1) firstActive = i;
+      else if (lastActive == -1) lastActive = i;
     } else {
       state.headingEntries[i].classList.remove(treeClasses.active);
     }
@@ -51,6 +71,11 @@ export function highlightCurrentHeading() {
 
   if ((firstDist == -1 || firstDist > constants.headingSwitchBuffer) && last != -1) {
     state.headingEntries[last].classList.add(treeClasses.active);
+  }
+
+  if (firstActive != -1) {
+    scrollIntoViewIfNeeded(state.headingEntries[firstActive]);
+    scrollIntoViewIfNeeded(state.headingEntries[lastActive]);
   }
 
   state.lastUpdateTs = now;

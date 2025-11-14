@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mdviewer</title>
+  <!-- Favicon: #1976d2 on white bg, Font: Graduate -->
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/pygments.css">
+  <link rel="stylesheet" href="/static/katex/katex-0-16-22.min.css">
+
+</head>
+<body>
+  <div id="markdown-body">{{ content }}</div>
+  <script src="/static/katex/katex-0-16-22.min.js"></script>
+  <script src="/static/katex/auto-render-0-16-22.min.js"></script>
+  <script type="module" src="/static/js/math.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        renderMath(document);
+    });
+  </script>
+
+</body>
+</html>
