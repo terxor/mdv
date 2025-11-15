@@ -3,6 +3,7 @@ from mdparser import MarkdownParser
 from logger import get_logger
 import os
 from dataclasses import dataclass
+import threading, time
 
 logger = get_logger(__name__)
 
@@ -23,13 +24,29 @@ class FileNode:
     last_updated: int = None
 
 class MdViewerState:
-    def __init__(self, root_dir):
-        self._root_dir = root_dir
+    def __init__(self, cfg):
+        self._root_dir = cfg['dir']
+        self._precache = cfg.get('precache',None)
         self._node_map = {}
         self.refresh()
-        self._build_full_cache()
+        if self._precache:
+            self._build_full_cache()
+        else:
+            threading.Thread(target=self._build_full_cache).start()
         self._fuzzy_search = FuzzySearch(self._node_map)
-    
+
+    # Refresh the last updated time of the node and invalidate
+    # content if required
+    def _sync_node (self, node):
+        full_path = os.path.join(self._root_dir, node.id)
+        last_updated = os.stat(full_path).st_mtime
+        if node.last_updated is None or node.last_updated < last_updated:
+            if node.last_updated is not None:
+                logger.debug(f"Clearing stale content of node {id}")
+            node.raw = None  # Invalidate raw content
+            node.parsed = None
+            node.last_updated = last_updated
+
     # Lightweight sync with file system.
     # It is a metadata refresh, which does not read file contents.
     # It adds/deletes nodes which are not in the cache (but there in the file system)
@@ -52,14 +69,7 @@ class MdViewerState:
                         node = FileNode(id=id)
                         self._node_map[node.id] = node
                     
-                    node = self._node_map[id]
-                    last_updated = os.stat(full_path).st_mtime
-                    if node.last_updated is None or node.last_updated < last_updated:
-                        if node.last_updated is not None:
-                            logger.debug(f"Clearing stale content of node {id}")
-                        node.raw = None  # Invalidate raw content
-                        node.parsed = None
-                        node.last_updated = last_updated
+                    self._sync_node(self._node_map[id])
                     
                     if id in to_delete:
                         to_delete.remove(id)
@@ -72,6 +82,7 @@ class MdViewerState:
     def _build_full_cache(self):
         # Assuming bare map is already built
         for node in self._node_map.values():
+            time.sleep(0.05) # Sleep for 50ms to allow other processing
             self._refresh_node(node)
         
         # For stats
@@ -79,15 +90,16 @@ class MdViewerState:
         for node in self._node_map.values():
             size += len(node.raw)
             size += len(node.parsed)
-        logger.info(f'Built full cache of {size} bytes worth of content')
+        logger.debug(f'Built full cache of {size} bytes worth of content')
 
     def _refresh_node(self, node):
+        self._sync_node(node)
         if node.raw is not None and node.parsed is not None:
             # Node is already fully loaded, no need to refresh
             return
 
         full_path = os.path.join(self._root_dir, node.id)
-        logger.info(f"Processing node (this is costly!): {node.id} ")
+        logger.debug(f"Building node: {node.id} ")
         try:
             with open(full_path, 'r', encoding='utf-8') as f:
                 raw_content = f.read()

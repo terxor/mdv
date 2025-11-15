@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/viewer.css">
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/viewer.js"></script>
+{% endblock %}
+
+{% block body %}
+  <div id="sidebar" class="sidebar-left">
+    <div class="sidebar-header">
+      <a href="/"><img src="/static/logo.png" alt="Logo" class="app-logo" width="28" height="28"></a>
+      <div id="search-bar">
+        <input type="text" id="search-input" placeholder="Search" autocomplete="off">
+      </div>
+    </div>
+    <div id="dtree-container">
+
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay"></div>
+
+  <div id="search-results">
+    <div class="search-header">
+      <div class="search-column-file">Files</div>
+      <div class="search-column-content">Content</div>
+    </div>
+    <div class="search-body">
+      <ul class="search-column-file" id="search-results-file"></ul>
+      <ul class="search-column-content" id="search-results-content"></ul>
+    </div>
+  </div>
+
+  <!-- structural elements begin -->
+
+<div class="container">
+  <div class="section-left" id="sidebar-left-toggle-area">
+    <span class="chevron">&rsaquo;</span>
+  </div>
+  <div class="section-main" id="section-main">
+      <div id="page-message" class="muted-message"></div>
+      <div id="markdown-body">{{ content }}</div>
+  </div>
+  <div class="section-right">
+    <div id="toc-container"></div>
+  </div>
+</div>
+{% endblock %}
+

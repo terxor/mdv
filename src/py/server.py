@@ -1,130 +1,135 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import os
 import argparse
 import json
+import mimetypes
 from logger import get_logger
-from http.server import SimpleHTTPRequestHandler, HTTPServer
-from urllib.parse import unquote, urlparse, parse_qs
+from mdparser import MarkdownParser
 from sv_state import MdViewerState
+from jinja2 import Environment, FileSystemLoader
+from werkzeug.serving import run_simple
+from werkzeug.wrappers import Request, Response
+from werkzeug.routing import Map, Rule
+from werkzeug.exceptions import HTTPException, NotFound
+
+env = Environment(loader=FileSystemLoader("templates"))
+
+def render_markdown_page(html: str) -> str:
+    template = env.get_template("plain.html")
+    return template.render(content=html)
 
 logger = get_logger(__name__)
 
-class MdViewerServer(HTTPServer):
-    """Custom HTTP server for Markdown Viewer."""
-    def __init__(self, server_address, RequestHandlerClass, config: dict):
-        super().__init__(server_address, RequestHandlerClass)
-        self.config = config
-        self.state = MdViewerState(config['dir'])
+# ---------------------------------------------------------
+# URL map
+# ---------------------------------------------------------
 
-class MdViewerHandler(SimpleHTTPRequestHandler):
-    """Request handler for Markdown Viewer."""
+url_map = Map([
+    Rule("/", endpoint="index"),
+    Rule("/static/<path:filename>", endpoint="static"),
+    Rule("/v/<path:filename>", endpoint="view"),
+    Rule("/m/<path:filename>", endpoint="mdplain"),
+    Rule("/t/<path:filename>", endpoint="mdtext"),
+    Rule("/api/tree", endpoint="dirtree"),
+    Rule("/api/search", endpoint="search"),
+])
 
-    # suppress default logging
-    def log_message(self, format, *args):
-        pass  
+# ---------------------------------------------------------
+# Application
+# ---------------------------------------------------------
 
-    # client disconnected early — just ignore it
-    def handle(self):
+class App:
+    def __init__(self, config):
+        self.url_map = url_map
+        self.static_dir = "static"
+        self.state = MdViewerState(config)
+
+    # Dispatcher
+    def dispatch(self, request):
+        adapter = self.url_map.bind_to_environ(request.environ)
         try:
-            super().handle()
-        except BrokenPipeError:
-            pass  
+            endpoint, values = adapter.match()
+            handler = getattr(self, f"on_{endpoint}")
+            return handler(request, **values)
+        except NotFound:
+            return Response("Not found", status=404, mimetype="text/plain")
+        except HTTPException as e:
+            return e
 
-    def do_GET(self):
-        parsed_url = urlparse(self.path)
-        path = parsed_url.path
-        query = parse_qs(parsed_url.query)
-        logger.debug(f"GET: {path}, query: {query}")
+    # HTML
+    def on_index(self, request):
+        tree = self.state.get_tree()
+        tree_md = env.get_template("tree.md").render(tree=tree)
+        html = env.get_template("viewer.html").render(content=MarkdownParser.parse(tree_md))
+        return Response(html, mimetype="text/html")
 
-        if path.startswith("/static/"):
-            return self._serve_static(path)
-        if path.startswith("/render/") or path == "/":
-            return self._serve_index()
-        if path == "/api/tree":
-            return self._send_json(self.server.state.get_tree())
-        if path == "/api/search":
-            return self._handle_search(query)
-        if path.startswith("/raw/"):
-            return self._serve_content(path, raw=True)
-        if path.startswith("/plain/"):
-            return self._serve_content(path, raw=False)
+    def on_view(self, request, filename):
+        md_html = self.state.get_content(filename)
+        html = env.get_template("viewer.html").render(content=md_html)
+        return Response(html, mimetype="text/html")
 
-        return self._send_error()
+    # JSON
+    def on_dirtree(self, request):
+        tree = self.state.get_tree()
+        return Response(json.dumps(tree), mimetype="application/json")
+    
+    def on_search(self, request):
+        # Access query parameters
+        query = request.args.get("query", None)  # default if missing
+        result = self.state.search(query)
+        return Response(json.dumps(result), mimetype="application/json")
 
-    def _serve_static(self, path: str):
-        static_path = os.path.join("static", path[len("/static/"):])
-        if os.path.isfile(static_path):
-            self.path = "/" + static_path
-            return super().do_GET()
-        return self._send_error()
+    # Plain markdown
+    def on_mdplain(self, request, filename):
+        md_html = self.state.get_content(filename)
+        html = env.get_template("plain.html").render(content=md_html)
+        return Response(html, mimetype="text/html")
 
-    def _serve_index(self):
-        # Refresh state on explicit page request, not on every GET
-        self.server.state.refresh()
-        self.path = "/index.html"
-        return super().do_GET()
+    # Plain markdown
+    def on_mdtext(self, request, filename):
+        raw_text = self.state.get_content(filename,raw=True)
+        return Response(raw_text, mimetype="text/plain")
 
-    def _handle_search(self, query: dict):
-        search_query = query.get("query", [None])[0]
-        if not search_query:
-            return self._send_error(400, "Missing 'query' parameter")
-        return self._send_json(self.server.state.search(search_query))
+    # Static file
+    def on_static(self, request, filename):
+        path = os.path.join(self.static_dir, filename)
+        if not os.path.isfile(path):
+            return Response("Not found", status=404, mimetype="text/plain")
+        
+        with open(path, "rb") as f:
+            data = f.read()
+        
+        # Guess MIME type
+        mimetype, _ = mimetypes.guess_type(path)
+        if not mimetype:
+            mimetype = "application/octet-stream"
+        
+        return Response(data, mimetype=mimetype)
 
-    def _serve_content(self, path: str, raw: bool):
-        # Handles both /raw/ and /plain/
-        prefix = "/raw/" if raw else "/plain/"
-        name = path[len(prefix):]
-        name = unquote(name)  # Decode URL-encoded characters
-        try:
-            content = self.server.state.get_content(name, raw=raw)
-            if raw:
-                return self._send_plaintext(content)
-            else:
-                return self._send_html(content)
-        except Exception as e:
-            logger.error(f"Error serving content '{name}': {e}")
-            return self._send_error()
+    # WSGI wrapper
+    def wsgi_app(self, environ, start_response):
+        request = Request(environ)
+        response = self.dispatch(request)
+        return response(environ, start_response)
 
-    def _send_response(self, content: bytes, content_type: str, code: int = 200):
-        self.send_response(code)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(content)))
-        self.end_headers()
-        try:
-            self.wfile.write(content)
-        except BrokenPipeError:
-            logger.warning("Client disconnected before response could complete")
+    # Callable wrapper
+    def __call__(self, environ, start_response):
+        return self.wsgi_app(environ, start_response)
 
-    def _send_plaintext(self, content: str, code: int = 200):
-        self._send_response(content.encode("utf-8"), "text/plain; charset=utf-8", code)
 
-    def _send_json(self, data, code: int = 200):
-        response_bytes = json.dumps(data).encode("utf-8")
-        self._send_response(response_bytes, "application/json", code)
-
-    def _send_html(self, content: str, code: int = 200):
-        self._send_response(content.encode("utf-8"), "text/html", code)
-
-    def _send_error(self, code: int = 404, message: str = "Not found"):
-        if self.path.startswith("/api/"):
-            self._send_json({"error": message}, code)
-        else:
-            self._send_plaintext(message, code)
+# ---------------------------------------------------------
+# Entrypoint
+# ---------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Markdown viewer")
-    parser.add_argument("--dir", required=True, help="Directory to serve")
-    parser.add_argument("--port", default="5000", help="Port to serve on")
-    parser.add_argument("--host", default="localhost", help="Host to bind to")
+    parser.add_argument("--dir", "-d", required=True, help="Directory to serve")
+    parser.add_argument("--port", "-p", type=int,default=5000, help="Port to serve on")
+    parser.add_argument("--host", "-H", default="localhost", help="Host to bind to")
     args = parser.parse_args()
+    app = App(config={'dir':args.dir})
+    run_simple(args.host, args.port, app, use_reloader=True)
 
-    config = {"dir": args.dir}
-    logger.info(f"Config: {config}")
-
-    server = MdViewerServer((args.host, int(args.port)), MdViewerHandler, config)
-    logger.info(f"Serving on http://{args.host}:{args.port}/")
-    server.serve_forever()
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

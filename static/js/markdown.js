@@ -1,4 +1,15 @@
-import { commonClasses } from './commons.js';
+document.addEventListener('DOMContentLoaded', async () => {
+  mdbody = document.getElementById('markdown-body')
+
+  let topLevelHeading = mdbody.querySelector('h1');
+  if (topLevelHeading) {
+    document.title = topLevelHeading.textContent;
+  }
+
+  renderMath(mdbody);
+  // Make code blocks copy-able
+  genCopyButtons(mdbody);
+});
 
 function renderMath(container) {
   const unescapeLatex = (text) => text.replace(/\\\\/g, '\\');
@@ -20,13 +31,6 @@ function renderMath(container) {
   });
 }
 
-export function renderMarkdown(container, html) {
-  container.innerHTML = html;
-  renderMath(container);
-
-  // Make code blocks copy-able
-  genCopyButtons(container);
-}
 
 // Post page load function
 // Add copy-to-clipboard buttons for code blocks

@@ -1,36 +1,61 @@
-# mdviewer - local server for markdown files
+# mdv - Mardown Viewer for local directories
+
+## Features
+
+- Clean styles, convenient to customize
+- Directory tree sidebar for quick switching
+- Table of contents automatically generates, heading tracking/highlighting
+- Searching: both files names and content
+
+## Usage
+
+For convenience, make a symlink
+
+```sh
+ln -s ./mdv ~/.local/bin/mdv
+```
+
+Start the server.
+On first time, it will create a virtual environment and setup all dependencies
+in the repo directory.
+
+```sh
+mdv -d ~/workspace/scratch -p 5000
+```
+
+Suppose directory listing of `~/workspace/scratch` is
+
+```
+/home/terxor/workspace/scratch
+└── notes
+    └── topics
+        └── abc.md
+```
+
+You can then view the file `abc.md` in three ways:
+
+- `http://localhost:5000/v/notes/topics/abc.md`: Default viewer
+- `http://localhost:5000/m/notes/topics/abc.md`: Minimal viewer
+- `http://localhost:5000/t/notes/topics/abc.md`: Plaintext form
+
+## Development
 
 To regenerate syntax css:
 
-```
-pygmentize -S default -f html > static/pygments.css
-
-# Preferred
+```sh
 pygmentize -S xcode -f html > static/pygments.css
 ```
 
-dev dependencies:
-
-- `sass`: `sudo npm install -g sass`
-
-extras:
-
-```
-npx prettier static/js/ --write
-```
-
-In case you don't wish to download whole `node/npm` thing, you can
-get standalone binary:
+Sass standalone binary:
 
 ```
 curl -fsSL -o sass.tar.gz https://github.com/sass/dart-sass/releases/download/1.91.0/dart-sass-1.91.0-linux-x64.tar.gz
 ```
 
-## TODO
+### TODOs
 
 - Fix search of terms with special symbols like 'vector<int>'
-
-- Make file links to be able to open in new tabs
-- Reload button (maybe)
-
+- Reload button (?)
 - Bug: splitlines on None in fuzzysearch (L=43)
+
+--------------------------------------------------------------------------------
