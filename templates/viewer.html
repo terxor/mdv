@@ -1,19 +1,14 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>mdviewer</title>
-  <!-- Favicon: #1976d2 on white bg, Font: Graduate -->
-  <link rel="icon" href="/static/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css">
-  <link rel="stylesheet" href="/static/pygments.css">
-  <link rel="stylesheet" href="/static/katex/katex-0-16-22.min.css">
+{% extends "base.html" %}
 
-</head>
-<body>
+{% block styles %}
+<link rel="stylesheet" href="/static/viewer.css">
+{% endblock %}
 
-  
+{% block scripts %}
+<script src="/static/js/viewer.js"></script>
+{% endblock %}
+
+{% block body %}
   <div id="sidebar" class="sidebar-left">
     <div class="sidebar-header">
       <a href="/"><img src="/static/logo.png" alt="Logo" class="app-logo" width="28" height="28"></a>
@@ -21,7 +16,9 @@
         <input type="text" id="search-input" placeholder="Search" autocomplete="off">
       </div>
     </div>
-    <div id="dtree-container"></div>
+    <div id="dtree-container">
+
+    </div>
   </div>
 
   <div id="overlay" class="overlay"></div>
@@ -45,15 +42,11 @@
   </div>
   <div class="section-main" id="section-main">
       <div id="page-message" class="muted-message"></div>
-      <div id="markdown-body" class="hidden"></div>
+      <div id="markdown-body">{{ content }}</div>
   </div>
   <div class="section-right">
     <div id="toc-container"></div>
   </div>
 </div>
+{% endblock %}
 
-  <script src="/static/katex/katex-0-16-22.min.js"></script>
-  <script src="/static/katex/auto-render-0-16-22.min.js"></script>
-  <script type="module" src="/static/js/main.js"></script>
-</body>
-</html>

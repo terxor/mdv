@@ -26,7 +26,7 @@ class FileNode:
 class MdViewerState:
     def __init__(self, cfg):
         self._root_dir = cfg['dir']
-        self._precache = cfg['precache']
+        self._precache = cfg.get('precache',None)
         self._node_map = {}
         self.refresh()
         if self._precache:
