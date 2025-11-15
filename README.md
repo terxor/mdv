@@ -12,7 +12,7 @@
 For convenience, make a symlink
 
 ```sh
-ln -s ./mdv ~/.local/bin/mdv
+ln -s "$PWD/mdv" ~/.local/bin/mdv
 ```
 
 Start the server.
@@ -49,7 +49,16 @@ pygmentize -S xcode -f html > static/pygments.css
 Sass standalone binary:
 
 ```
+mkdir -p tmp
+cd tmp
 curl -fsSL -o sass.tar.gz https://github.com/sass/dart-sass/releases/download/1.91.0/dart-sass-1.91.0-linux-x64.tar.gz
+tar -xzf sass.tar.gz
+```
+
+Now, regen css while development:
+
+```
+tmp/dart-sass/sass --watch src/styles:static/
 ```
 
 ### TODOs
