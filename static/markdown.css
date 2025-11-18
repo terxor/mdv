@@ -134,11 +134,13 @@
 }
 #markdown-body pre {
   display: block;
-  padding: 8px;
+  margin-top: 4px;
+  padding: 6px 8px;
   background: #f5f7fa;
   overflow-x: auto;
   font-size: 0.95rem;
   line-height: 1.45;
+  border-radius: 4px;
   border: 1px solid #D3D5D6;
 }
 #markdown-body pre.highlight {
