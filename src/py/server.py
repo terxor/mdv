@@ -117,12 +117,14 @@ class App:
 
     # HTML
     def on_index(self, request):
+        self.state.refresh()
         tree = self.state.get_tree()
         tree_md = env.get_template("tree.md").render(tree=tree,path="v",root="/")
         html = env.get_template("viewer.html").render(content=MarkdownParser.parse(tree_md))
         return Response(html, mimetype="text/html")
 
     def on_index_mdplain(self, request):
+        self.state.refresh()
         tree = self.state.get_tree()
         tree_md = env.get_template("tree.md").render(tree=tree,path="m",root="/")
         html = env.get_template("plain.html").render(content=MarkdownParser.parse(tree_md))

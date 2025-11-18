@@ -135,11 +135,10 @@
 #markdown-body pre {
   display: block;
   padding: 8px;
-  background: #fbfcff;
+  background: #f5f7fa;
   overflow-x: auto;
   font-size: 0.95rem;
   line-height: 1.45;
-  border-radius: 8px;
   border: 1px solid #D3D5D6;
 }
 #markdown-body pre.highlight {
@@ -150,7 +149,31 @@
   background-color: #EBEDF2;
 }
 #markdown-body pre > code {
-  color: #405559;
+  color: #252b33;
+}
+#markdown-body .code-wrapper {
+  position: relative;
+}
+#markdown-body .copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  background: none;
+  border: none;
+  padding: 6px;
+  margin: 0;
+  line-height: 0;
+  cursor: pointer;
+}
+#markdown-body .copy-btn .svg {
+  display: block;
+}
+#markdown-body .code-wrapper:hover .copy-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 #markdown-body code {
   color: #A90D91;

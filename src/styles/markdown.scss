@@ -143,7 +143,7 @@ $blockquote-text-color: #2e3a46;
     overflow-x: auto;
     font-size: 0.95rem;
     line-height: 1.45;
-    border-radius: 8px;
+    // border-radius: 8px;
     border: 1px solid $code-border;
 
     &.highlight {
@@ -160,6 +160,34 @@ $blockquote-text-color: #2e3a46;
     }
   }
 
+  // For copy buttons on code blocks
+  .code-wrapper {
+    position: relative;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+
+    background: none;
+    border: none;
+    padding: 6px;
+    margin: 0;
+    line-height: 0;
+    cursor: pointer;
+    .svg {
+      display: block;
+    }
+  }
+  .code-wrapper:hover .copy-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  // Inline code
   code {
     color: $inline-code-color;
     font-family: $font-mono;
